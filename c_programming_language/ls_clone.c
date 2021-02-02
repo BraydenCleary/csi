@@ -12,9 +12,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
+#include <errno.h>
 #include <sys/stat.h>
 
-#define MAX_FILES 100
+#define MAX_FILES 400
+#define MAX_FILENAME_LENGTH 300
 
 // TODO: Expand this struct to collect more info on files
 typedef struct {
@@ -25,29 +27,64 @@ typedef struct {
 } File;
 
 char *get_cwd(void);
-int read_cwd(DIR *cwd, File files[]);
+int read_dir(char *directory_name, DIR *dir, File files[]);
 void print_files(File files[], int file_count);
+int read_file(char *filename, File files[], int file_count);
 
 // TODO: Parse args so that you can support ls of any directory, not just cwd
-int main() {
-    char *current_working_directory = get_cwd();
+int main(int argc, char *argv[]) {
+    char *entity_to_open;
 
-    DIR *cwd = opendir(current_working_directory);
-
-    if (cwd == NULL) {
-        perror("opendir error");
-        return 1;
+    if (argc == 1) {
+        entity_to_open = get_cwd();
+    } else {
+        // If file is passed, print information about file
+        // If directory is passed, print information about files in directory
+        entity_to_open = argv[1];
     }
 
-    File files[MAX_FILES];
+    printf("entity to open: %s\n", entity_to_open);
 
-    int file_count = read_cwd(cwd, files);
+    DIR *dir = opendir(entity_to_open);
+
+    File files[MAX_FILES];
+    int file_count = 0;
+
+    if (dir == NULL) {
+        // Let's assume that we're working with a file
+        file_count = read_file(entity_to_open, files, file_count);
+    } else {
+        file_count = read_dir(entity_to_open, dir, files);
+    }
 
     print_files(files, file_count);
 
     // Do I have to clean up my memory on the heap?
-    free(current_working_directory);
+    if (argc == 1) {
+        free(entity_to_open);
+    }
     return 0;
+}
+
+int read_file(char *filename, File files[], int file_count) {
+    struct stat stat_buf;
+    int stat_return = stat(filename, &stat_buf);
+
+    printf("filename: %s\n", filename);
+
+    if (stat_return != 0) {
+        fprintf(stderr, "stat error for %s: %s\n", filename, strerror(errno));
+    }
+
+    File file = {
+        stat_buf.st_size,
+        stat_buf.st_mtimespec.tv_sec,
+        filename
+    };
+
+    files[file_count] = file;
+
+    return file_count + 1;
 }
 
 void print_files(File files[], int file_count) {
@@ -58,28 +95,20 @@ void print_files(File files[], int file_count) {
     }
 }
 
-int read_cwd(DIR *cwd, File files[]) {
+int read_dir(char *directory_name, DIR *dir, File files[]) {
     struct dirent *dp;
     int file_count = 0;
 
-    while ((dp = readdir(cwd)) != NULL) {
-        struct stat stat_buf;
-        int stat_return = stat(dp->d_name, &stat_buf);
-
-        if (stat_return != 0) {
-            perror("stat error");
-            continue;
-        }
-
-        File file = {
-            stat_buf.st_size,
-            stat_buf.st_mtimespec.tv_sec,
-            dp->d_name
-        };
-
-        files[file_count] = file;
-        file_count++;
+    while ((dp = readdir(dir)) != NULL && file_count < MAX_FILES) {
+        char *full_path = (char *)calloc(MAX_FILENAME_LENGTH, sizeof(char));
+        strcat(full_path, directory_name);
+        strcat(full_path, "/");
+        strcat(full_path, dp->d_name);
+        file_count = read_file(full_path, files, file_count);
     }
+
+    // Check if more files to read and let user know that we stopped reading files
+    // will have to allocate more memory for files array
 
     return file_count;
 }
