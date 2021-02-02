@@ -43,8 +43,6 @@ int main(int argc, char *argv[]) {
         entity_to_open = argv[1];
     }
 
-    printf("entity to open: %s\n", entity_to_open);
-
     DIR *dir = opendir(entity_to_open);
 
     File files[MAX_FILES];
@@ -69,8 +67,6 @@ int main(int argc, char *argv[]) {
 int read_file(char *filename, File files[], int file_count) {
     struct stat stat_buf;
     int stat_return = stat(filename, &stat_buf);
-
-    printf("filename: %s\n", filename);
 
     if (stat_return != 0) {
         fprintf(stderr, "stat error for %s: %s\n", filename, strerror(errno));
