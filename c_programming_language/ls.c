@@ -28,6 +28,7 @@ char *get_cwd(void);
 int read_cwd(DIR *cwd, File files[]);
 void print_files(File files[], int file_count);
 
+// TODO: Parse args so that you can support ls of any directory, not just cwd
 int main() {
     char *current_working_directory = get_cwd();
 
