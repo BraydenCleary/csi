@@ -41,12 +41,10 @@ func main() {
 			savedUrls[url] = true
 			go saveUrl(url, baseUrl, workChan, &wg)
 		}
-		fmt.Println(len(savedUrls))
 	}
 }
 
 func saveUrl(url string, baseUrl string, workChan chan<- string, wg *sync.WaitGroup) {
-	fmt.Println("savingUrl")
 	defer wg.Done()
 	resp, err := http.Get(url)
 	if err != nil {
@@ -57,8 +55,6 @@ func saveUrl(url string, baseUrl string, workChan chan<- string, wg *sync.WaitGr
 	if nonHtmlResponse(resp) {
 		fmt.Printf("Html in response for url %s not found. Exiting.\n", url)
 	}
-
-	generateFilePath(url)
 
 	rootNode, err := html.Parse(resp.Body)
 	if err != nil {
@@ -99,8 +95,6 @@ func crawlPageForLinks(n *html.Node, baseUrl string, workChan chan<- string, wg 
 						urlToSave = fmt.Sprintf("%s%s", baseUrl, a.Val)
 						n.Attr[idx].Val = generateFilePath(urlToSave)
 					}
-
-					fmt.Println(urlToSave)
 					workChan <- urlToSave
 				}
 			}
