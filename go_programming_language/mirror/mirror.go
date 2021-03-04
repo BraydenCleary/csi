@@ -15,19 +15,20 @@ import (
 )
 
 func main() {
-	passedUrl := "https://golang.org"
-	parsedUrl, err := url.Parse(passedUrl)
+	// TODO: make this passedURL dynamic
+	passedURL := "https://golang.org"
+	parsedURL, err := url.Parse(passedURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("Unable to parse url, please try again %s", err))
 	}
 
-	baseUrl := fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host)
+	baseURL := fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
 
 	workChan := make(chan string)
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
-	go saveUrl(passedUrl, baseUrl, workChan, &wg)
+	go saveURL(passedURL, baseURL, workChan, &wg)
 
 	go func() {
 		wg.Wait()
@@ -36,63 +37,71 @@ func main() {
 
 	savedUrls := make(map[string]bool)
 	for url := range workChan {
+		// Figure out how to handle pages like "downloads" page for golang
+		// Possibly set a timeout on our call to http.Get
 		if !savedUrls[url] && strings.Index(url, "https://golang.org/dl/") != 0 {
 			wg.Add(1)
 			savedUrls[url] = true
-			go saveUrl(url, baseUrl, workChan, &wg)
+			go saveURL(url, baseURL, workChan, &wg)
 		}
 	}
 }
 
-func saveUrl(url string, baseUrl string, workChan chan<- string, wg *sync.WaitGroup) {
+func saveURL(url string, baseURL string, workChan chan<- string, wg *sync.WaitGroup) {
 	defer wg.Done()
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return
 	}
-	defer func() { resp.Body.Close() }()
+	defer resp.Body.Close()
 
-	if nonHtmlResponse(resp) {
-		fmt.Printf("Html in response for url %s not found. Exiting.\n", url)
+	if nonHTMLResponse(resp) {
+		fmt.Printf("Html not found in response for url %s. Exiting.\n", url)
+		return
 	}
 
 	rootNode, err := html.Parse(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(fmt.Errorf("Error in parsing html response for url %s", err))
+		return
 	}
 
-	wg.Add(1)
-	crawlPageForLinks(rootNode, baseUrl, workChan, wg)
+	// TODO: Call this as a go routine
+	crawlPageForLinks(rootNode, baseURL, workChan)
 
 	writeFile, err := os.Create(generateFilePath(url))
-	defer func() { writeFile.Close() }()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(fmt.Errorf("Error in creating write file %s", generateFilePath(url)))
+		return
 	}
+	defer writeFile.Close()
+
 	err = html.Render(writeFile, rootNode)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(fmt.Errorf("Error writing to write file %s", generateFilePath(url)))
+		return
 	}
 }
 
 func generateFilePath(url string) string {
 	urlHash := sha1.Sum([]byte(url))
+	// TODO: Make the write dir dynamic based on the passedURL
 	return filepath.Join("/var/tmp/test", fmt.Sprintf("%x%s", urlHash, ".html"))
 }
 
-func crawlPageForLinks(n *html.Node, baseUrl string, workChan chan<- string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func crawlPageForLinks(n *html.Node, baseURL string, workChan chan<- string) {
 	if n.Type == html.ElementNode && n.Data == "a" {
 		for idx, a := range n.Attr {
 			if a.Key == "href" {
 				if strings.Index(a.Val, "/") == 0 && strings.Index(a.Val, "//") != 0 {
-					parseID := strings.Split(a.Val, "#")
 					urlToSave := ""
-					if len(parseID) > 1 {
-						urlToSave = fmt.Sprintf("%s%s", baseUrl, parseID[0])
+					if strings.Index(a.Val, "#") >= 0 {
+						parseID := strings.Split(a.Val, "#")
+						urlToSave = fmt.Sprintf("%s%s", baseURL, parseID[0])
 						n.Attr[idx].Val = fmt.Sprintf("%s#%s", generateFilePath(urlToSave), parseID[1])
 					} else {
-						urlToSave = fmt.Sprintf("%s%s", baseUrl, a.Val)
+						urlToSave = fmt.Sprintf("%s%s", baseURL, a.Val)
 						n.Attr[idx].Val = generateFilePath(urlToSave)
 					}
 					workChan <- urlToSave
@@ -102,12 +111,11 @@ func crawlPageForLinks(n *html.Node, baseUrl string, workChan chan<- string, wg 
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		wg.Add(1)
-		go crawlPageForLinks(c, baseUrl, workChan, wg)
+		crawlPageForLinks(c, baseURL, workChan)
 	}
 }
 
-func nonHtmlResponse(response *http.Response) bool {
+func nonHTMLResponse(response *http.Response) bool {
 	htmlResponse := false
 	for _, contentType := range response.Header["Content-Type"] {
 		if strings.Index(contentType, "text/html") >= 0 {
