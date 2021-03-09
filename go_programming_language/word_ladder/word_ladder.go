@@ -61,11 +61,11 @@ func ladderLength(beginWord string, endWord string, wordList []string) int {
 	fullWordList = append(fullWordList, endWord)
 	graph := buildGraph(fullWordList)
 
-	visitedWords := []string{}
+	visitedWords := make(map[string]bool)
 	initialWord := wordWithDepth{word: beginWord, depth: 0}
 
 	workQueue, visitedWords, depth := bfsForWord(initialWord, endWord, visitedWords, graph, []wordWithDepth{})
-	for len(workQueue) > 0 && depth < 0 && len(visitedWords) < len(wordList)-1 {
+	for len(workQueue) > 0 && depth < 0 {
 		nextWord := workQueue[0]
 		workQueue = workQueue[1:]
 		workQueue, visitedWords, depth = bfsForWord(nextWord, endWord, visitedWords, graph, workQueue)
@@ -83,35 +83,22 @@ type wordWithDepth struct {
 	depth int
 }
 
-func bfsForWord(w wordWithDepth, targetWord string, visitedWords []string, graph map[string][]string, workQueue []wordWithDepth) ([]wordWithDepth, []string, int) {
+func bfsForWord(w wordWithDepth, targetWord string, visitedWords map[string]bool, graph map[string][]string, workQueue []wordWithDepth) ([]wordWithDepth, map[string]bool, int) {
 	depth := -1
+	if _, ok := visitedWords[w.word]; !ok {
+		visitedWords[w.word] = true
+	}
 	for _, w1 := range graph[w.word] {
 		if w1 == targetWord {
 			depth = w.depth + 1
 			break
 		}
 
-		shouldAdd := true
-		for _, w2 := range workQueue {
-			if w2.word == w1 {
-				shouldAdd = false
-			}
-		}
-		if shouldAdd {
+		if _, ok := visitedWords[w1]; !ok {
+			visitedWords[w1] = true
 			wordWithDepthToAdd := wordWithDepth{word: w1, depth: w.depth + 1}
 			workQueue = append(workQueue, wordWithDepthToAdd)
 		}
-	}
-
-	shouldAddToVisited := true
-	for _, w3 := range visitedWords {
-		if w.word == w3 {
-			shouldAddToVisited = false
-		}
-	}
-
-	if shouldAddToVisited {
-		visitedWords = append(visitedWords, w.word)
 	}
 
 	return workQueue, visitedWords, depth
