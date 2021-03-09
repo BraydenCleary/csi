@@ -1,7 +1,6 @@
 package main
 
 func main() {
-
 }
 
 func buildGraph(wordList []string) map[string][]string {
@@ -59,6 +58,8 @@ func ladderLength(beginWord string, endWord string, wordList []string) int {
 
 	fullWordList := append(wordList, beginWord)
 	fullWordList = append(fullWordList, endWord)
+	// This is slow, nested loop from 0 to len(word) and 'a' to 'z' and checking
+	// if the new word is in the word map might be faster
 	graph := buildGraph(fullWordList)
 
 	visitedWords := make(map[string]bool)
