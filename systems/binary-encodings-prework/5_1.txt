@@ -1,0 +1,16 @@
+Identify the 3 components of this 32-bit IEEE Floating Point Number and their values.
+
+sign    exponent          mantissa
+  0     10000100    01010100000000000000000
+
+Using the three components, compute the value this represents.
+
+128 + 4 - 127 == 5
+exponent == 2**5
+
+1/4 + 1/16 + 1/64
+
+16/64 + 4/64 + 1/64
+21/64
+
+85/64 * 2**5 == 42.5

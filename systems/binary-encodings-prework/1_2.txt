@@ -1,0 +1,4 @@
+In CSS, two ways to specify colors are hexadecimal and rgb. For instance, pure red would be 0xff0000 or rgb(255, 0, 0);. How many colors can be represented in each form?
+
+We're representing color using 3 bytes or 24 bits. This means we can encode update to 2**24 colors, or 16,777,216 colors.
+

@@ -1,0 +1,12 @@
+What is the sum of the following two signed integers? Does this match your expectations?
+
+0b01111111
+0b10000000+
+----------
+0b11111111 == -1
+
+How do you negate a number in two’s complement? How can we compute subtraction of two’s complement numbers?
+
+Maybe you negate by flipping all the bits and adding 1?
+
+I didn't get the second part of this but you can negate the second arg and add it to the first in order to subtract...super cool.

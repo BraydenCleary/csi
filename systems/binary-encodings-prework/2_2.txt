@@ -1,0 +1,8 @@
+Add these two binary numbers and determine the result by doing the addition “in binary”. Convert each number and check that the result matches your expectation.
+
+0b11111111 + 0b00001101 = 0b100001100
+255 + 13 == 256 + 12 == 268
+
+If my registers are only 8 bits wide, what is the value returned from that binary addition? What is this phenomenon called?
+
+The value returned from the above binary addition would be 0b00001100...this is called overflow...the true value of my addition can't be represented in 1 byte and we ended up overflowing.

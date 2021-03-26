@@ -1,0 +1,3 @@
+We’ve encoded the number 9001 in the file 9001. Did we use big-endian or little-endian encoding? You may wish to use xxd in either the default (hex) mode or with the -b flag for binary.
+
+Big endian. I wrote out the binary representation of 9001 in big endian as 0b00100011 0b00101001 and it matched.

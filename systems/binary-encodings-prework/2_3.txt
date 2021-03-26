@@ -1,0 +1,12 @@
+Given the following decimal values, determine their 8 bit two’s complement representations:
+
+127 == 0b01111111
+-128 == 0b10000000
+-1 == 0b11111111
+1 == 0b00000001
+-14 == 0b11110010
+
+Convert the following 8-bit two’s complement numbers to decimal:
+
+0b10000011 == -125
+0b11000100 == -60

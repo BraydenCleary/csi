@@ -1,0 +1,5 @@
+What are the numbers 9, 136 and 247 in hexadecimal?
+
+9 == 9
+136 == 0x88
+247 == 0xf7
